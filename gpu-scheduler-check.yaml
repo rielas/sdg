@@ -15,6 +15,7 @@ spec:
       labels:
         app: gpu-scheduler-check
     spec:
+      schedulerName: gpu-scheduler
       containers:
       - name: gpu-check
         image: bash
