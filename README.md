@@ -1,12 +1,12 @@
 Write a Kubernetes scheduler named gpu-scheduler in Python or Go that will place pods and sets environment variable `CUDA_VISIBLE_DEVICES` according to the annotation:
 
 ```yaml
- gpu-scheduling-map: |
- 0=node1:0,1
- 1=node2:2
- 2=node3:0,1,2
- 3=node4:3
- 4=node4:3
+gpu-scheduling-map: |
+  0=node1:0,1
+  1=node2:2
+  2=node3:0,1,2
+  3=node4:3
+  4=node4:3
 ```
 
 0=node1:0,1:
