@@ -26,22 +26,48 @@ PLACEMENT_MAP: dict[str, Placement] = {
 }
 
 
-def nodes_available() -> list[str]:
-    ready_nodes = []
-
-    for n in v1.list_node().items:
-        for status in n.status.conditions:
-            if status.status == "True" and status.type == "Ready":
-                ready_nodes.append(n.metadata.name)
-
-    return ready_nodes
-
-
 def get_node_name(index: str) -> str:
     if index not in PLACEMENT_MAP:
         raise ValueError(f"Index {index} not found in placement map.")
 
     return PLACEMENT_MAP[index].node_name
+
+
+def get_cuda_variable(index: str) -> str:
+    if index not in PLACEMENT_MAP:
+        raise ValueError(f"Index {index} not found in placement map.")
+
+    return PLACEMENT_MAP[index].cuda_visible_devices
+
+
+def patch_pod_env(name: str, index: str, namespace: str = "default"):
+    """Patch the pod to add CUDA_VISIBLE_DEVICES environment variable"""
+    cuda_devices = get_cuda_variable(index)
+    logging.info(f"Setting CUDA_VISIBLE_DEVICES={cuda_devices} for pod {name}")
+
+    patch_body = {
+        "spec": {
+            "containers": [
+                {
+                    "name": "gpu-check",
+                    "env": [
+                        {
+                            "name": "CUDA_VISIBLE_DEVICES",
+                            "value": cuda_devices,
+                        }
+                    ],
+                }
+            ]
+        }
+    }
+
+    try:
+        v1.patch_namespaced_pod(name=name, namespace=namespace, body=patch_body)
+        logging.info(
+            f"Successfully patched pod {name} with CUDA_VISIBLE_DEVICES={cuda_devices}"
+        )
+    except client.rest.ApiException as e:
+        logging.error(f"Failed to patch pod {name}: {json.loads(e.body)['message']}")
 
 
 def schedule(name: str, index: str, namespace: str = "default"):
@@ -57,8 +83,9 @@ def schedule(name: str, index: str, namespace: str = "default"):
     meta.name = name
 
     body = client.V1Binding(metadata=meta, target=target)
+    binding_result = v1.create_namespaced_binding(namespace, body)
 
-    return v1.create_namespaced_binding(namespace, body)
+    return binding_result
 
 
 def get_index(pod) -> str:
@@ -79,6 +106,7 @@ def main():
             try:
                 logging.info("Scheduling " + event["object"].metadata.name)
                 index = get_index(event["object"])
+                patch_pod_env(event["object"].metadata.name, index)
                 _ = schedule(event["object"].metadata.name, index)
             except client.rest.ApiException as e:
                 logging.error(json.loads(e.body)["message"])
