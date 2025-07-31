@@ -1,7 +1,8 @@
 import logging
 import json
-from dataclasses import dataclass
 from kubernetes import client, config, watch
+import annotation
+from annotation import Placement
 
 logging.basicConfig(level=logging.DEBUG)
 logging.info("Loading Kubernetes configuration...")
@@ -9,12 +10,6 @@ logging.info("Loading Kubernetes configuration...")
 config.load_incluster_config()
 v1 = client.CoreV1Api()
 scheduler_name = "gpu-scheduler"
-
-
-@dataclass
-class Placement:
-    node_name: str
-    cuda_visible_devices: str
 
 
 PLACEMENT_MAP: dict[str, Placement] = {
@@ -26,23 +21,9 @@ PLACEMENT_MAP: dict[str, Placement] = {
 }
 
 
-def get_node_name(index: str) -> str:
-    if index not in PLACEMENT_MAP:
-        raise ValueError(f"Index {index} not found in placement map.")
-
-    return PLACEMENT_MAP[index].node_name
-
-
-def get_cuda_variable(index: str) -> str:
-    if index not in PLACEMENT_MAP:
-        raise ValueError(f"Index {index} not found in placement map.")
-
-    return PLACEMENT_MAP[index].cuda_visible_devices
-
-
 def patch_pod_env(name: str, index: str, namespace: str = "default"):
     """Patch the pod to add CUDA_VISIBLE_DEVICES environment variable"""
-    cuda_devices = get_cuda_variable(index)
+    cuda_devices = annotation.default.get_cuda_variable(index)
     logging.info(f"Setting CUDA_VISIBLE_DEVICES={cuda_devices} for pod {name}")
 
     patch_body = {
@@ -75,7 +56,7 @@ def schedule(name: str, index: str, namespace: str = "default"):
     target = client.V1ObjectReference()
     target.kind = "Node"
     target.apiVersion = "v1"
-    node_name = get_node_name(index)
+    node_name = annotation.default.get_node_name(index)
     logging.info(f"Target node for pod {name} is {node_name}")
     target.name = node_name
 
@@ -106,7 +87,7 @@ def main():
             try:
                 logging.info("Scheduling " + event["object"].metadata.name)
                 index = get_index(event["object"])
-                patch_pod_env(event["object"].metadata.name, index)
+                #patch_pod_env(event["object"].metadata.name, index)
                 _ = schedule(event["object"].metadata.name, index)
             except client.rest.ApiException as e:
                 logging.error(json.loads(e.body)["message"])
