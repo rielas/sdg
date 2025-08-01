@@ -51,12 +51,15 @@ def patch_pod_env(name: str, index: str, namespace: str = "default"):
         logging.error(f"Failed to patch pod {name}: {json.loads(e.body)['message']}")
 
 
-def schedule(name: str, index: str, namespace: str = "default"):
+def schedule(name: str, index: str, placement: Placement, namespace: str = "default"):
     logging.debug(f"Scheduling pod with index {index}")
     target = client.V1ObjectReference()
     target.kind = "Node"
     target.apiVersion = "v1"
-    node_name = annotation.default.get_node_name(index)
+    node_name = placement.node_name
+
+    assert node_name is not None
+
     logging.info(f"Target node for pod {name} is {node_name}")
     target.name = node_name
 
@@ -64,13 +67,22 @@ def schedule(name: str, index: str, namespace: str = "default"):
     meta.name = name
 
     body = client.V1Binding(metadata=meta, target=target)
-    binding_result = v1.create_namespaced_binding(namespace, body)
+
+    try:
+        binding_result = v1.create_namespaced_binding(namespace, body)
+    except ValueError as e:
+        logging.error(f"Failed to bind pod {name} to node {node_name}: {e}")
+        return None
 
     return binding_result
 
 
 def get_index(pod) -> str:
     return pod.metadata.labels.get("apps.kubernetes.io/pod-index", "")
+
+
+def get_annotation(pod: client.V1Pod) -> str | None:
+    return pod.metadata.annotations.get("gpu-scheduling-map")
 
 
 def main():
@@ -87,8 +99,13 @@ def main():
             try:
                 logging.info("Scheduling " + event["object"].metadata.name)
                 index = get_index(event["object"])
-                #patch_pod_env(event["object"].metadata.name, index)
-                _ = schedule(event["object"].metadata.name, index)
+                annotation_text = get_annotation(event["object"])
+
+                if annotation_text:
+                    logging.info(f"Using annotation: {annotation_text}")
+                    annotation_obj = annotation.Annotation(annotation_text)
+                    placement = annotation_obj.get_placement(index)
+                    schedule(event["object"].metadata.name, index, placement)
             except client.rest.ApiException as e:
                 logging.error(json.loads(e.body)["message"])
 
