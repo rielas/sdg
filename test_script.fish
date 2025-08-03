@@ -40,6 +40,13 @@ else
     exit 1
 end
 
+if test (kubectl exec gpu-scheduler-check-2 -- printenv CUDA_VISIBLE_DEVICES) = "0,1,2"
+    printf "pod-2 has correct CUDA_VISIBLE_DEVICES\n"
+else
+    printf "pod-2 does not have correct CUDA_VISIBLE_DEVICES\n"
+    exit 1
+end
+
 if test (kubectl get pods/gpu-scheduler-check-3 -o jsonpath='{.spec.nodeName}') = "node4"
     printf "pod-3 on node4\n"
 else
@@ -47,10 +54,24 @@ else
     exit 1
 end
 
+if test (kubectl exec gpu-scheduler-check-3 -- printenv CUDA_VISIBLE_DEVICES) = "3"
+    printf "pod-3 has correct CUDA_VISIBLE_DEVICES\n"
+else
+    printf "pod-3 does not have correct CUDA_VISIBLE_DEVICES\n"
+    exit 1
+end
+
 if test (kubectl get pods/gpu-scheduler-check-4 -o jsonpath='{.spec.nodeName}') = "node4"
     printf "pod-4 on node4\n"
 else
     printf "pod-4 is not on node4\n"
+    exit 1
+end
+
+if test (kubectl exec gpu-scheduler-check-4 -- printenv CUDA_VISIBLE_DEVICES) = "3"
+    printf "pod-4 has correct CUDA_VISIBLE_DEVICES\n"
+else
+    printf "pod-4 does not have correct CUDA_VISIBLE_DEVICES\n"
     exit 1
 end
 
