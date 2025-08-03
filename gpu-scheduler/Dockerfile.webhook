@@ -1,7 +1,8 @@
 FROM ghcr.io/astral-sh/uv:python3.13-bookworm-slim
-
-COPY . /app
 WORKDIR /app
+COPY . /app
+RUN pip install flask
+EXPOSE 443
 ENV UV_COMPILE_BYTECODE=1
 RUN uv sync --locked
-CMD ["uv", "run", "scheduler.py"]
+CMD ["uv", "run", "admission_webhook.py"]

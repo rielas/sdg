@@ -1,0 +1,46 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: cuda-env-webhook
+  namespace: kube-system
+spec:
+  selector:
+    app: cuda-env-webhook
+  ports:
+    - protocol: TCP
+      port: 443
+      targetPort: 443
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cuda-env-webhook
+  namespace: kube-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cuda-env-webhook
+  template:
+    metadata:
+      labels:
+        app: cuda-env-webhook
+    spec:
+      containers:
+        - name: cuda-env-webhook
+          image: cuda-webhook:latest
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 443
+          volumeMounts:
+            - name: webhook-tls
+              mountPath: /app/tls.crt
+              subPath: tls.crt
+            - name: webhook-tls
+              mountPath: /app/tls.key
+              subPath: tls.key
+      volumes:
+        - name: webhook-tls
+          secret:
+            secretName: cuda-env-webhook-tls

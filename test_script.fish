@@ -3,16 +3,24 @@
 cd gpu-scheduler
 docker build . --tag gpu-scheduler:latest;
 kind load docker-image gpu-scheduler:latest --name gpu-cluster
+docker build --file Dockerfile.webhook . --tag cuda-webhook:latest
+kind load docker-image cuda-webhook:latest --name gpu-cluster
 cd ..
 
 printf "Test custom scheduler\n"
 
-kubectl delete -f gpu-scheduler-check.yaml
+kubectl delete -f webhook.yaml
+sleep 5
+kubectl apply -f webhook.yaml
 
+kubectl delete -f webhook-service.yaml
+sleep 5
+kubectl apply -f webhook-service.yaml
+
+kubectl delete -f gpu-scheduler-check.yaml
 sleep 5
 
 kubectl delete -f gpu-scheduler.yaml
-
 sleep 5
 
 kubectl apply -f gpu-scheduler.yaml

@@ -1,2 +1,14 @@
 
 gpu-scheduler/__pycache__/
+
+ca-cert-base64.txt
+
+ca-cert.pem
+
+ca-key.pem
+
+server-cert.pem
+
+server-key.pem
+
+server.csr
