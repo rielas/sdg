@@ -1,3 +1,7 @@
+# Demo
+
+[![asciicast](https://asciinema.org/a/69k0HEm9akIH4hIKipQHHmdrQ.svg)](https://asciinema.org/a/69k0HEm9akIH4hIKipQHHmdrQ)
+
 # Technical Task
 
 Write a Kubernetes scheduler named gpu-scheduler in Python or Go that will place pods and sets environment variable `CUDA_VISIBLE_DEVICES` according to the annotation:
