@@ -89,3 +89,54 @@ Run the test script to check the deployment:
 ./test_script.fish
 ```
 
+Final configuration should look like this:
+
+```sh
+~ kubectl get pod -owide -A                                                                                                                                                          (main ✔) 18:28
+NAMESPACE            NAME                                                READY   STATUS    RESTARTS          AGE   IP            NODE                        NOMINATED NODE   READINESS GATES
+default              gpu-scheduler-check-0                               1/1     Running   0                 21m   10.244.3.11   node1                       <none>           <none>
+default              gpu-scheduler-check-1                               1/1     Running   0                 21m   10.244.1.14   node2                       <none>           <none>
+default              gpu-scheduler-check-2                               1/1     Running   0                 21m   10.244.4.19   node3                       <none>           <none>
+default              gpu-scheduler-check-3                               1/1     Running   0                 21m   10.244.2.32   node4                       <none>           <none>
+default              gpu-scheduler-check-4                               1/1     Running   0                 21m   10.244.2.33   node4                       <none>           <none>
+kube-system          coredns-674b8bbfcf-b6k69                            1/1     Running   0                 19h   10.244.0.6    gpu-cluster-control-plane   <none>           <none>
+kube-system          coredns-674b8bbfcf-strxz                            1/1     Running   0                 19h   10.244.0.4    gpu-cluster-control-plane   <none>           <none>
+kube-system          cuda-env-webhook-75897fb444-l5kn5                   1/1     Running   0                 18m   10.244.1.15   node2                       <none>           <none>
+kube-system          etcd-gpu-cluster-control-plane                      1/1     Running   0                 19h   172.18.0.6    gpu-cluster-control-plane   <none>           <none>
+kube-system          gpu-scheduler-554f8d45c7-76v4c                      1/1     Running   0                 18m   10.244.3.12   node1                       <none>           <none>
+kube-system          kindnet-2647b                                       1/1     Running   0                 19h   172.18.0.5    node4                       <none>           <none>
+kube-system          kindnet-k5rkj                                       1/1     Running   0                 19h   172.18.0.2    node1                       <none>           <none>
+kube-system          kindnet-rhwxb                                       1/1     Running   0                 19h   172.18.0.3    node2                       <none>           <none>
+kube-system          kindnet-rlrt4                                       1/1     Running   0                 19h   172.18.0.6    gpu-cluster-control-plane   <none>           <none>
+kube-system          kindnet-w7jlb                                       1/1     Running   0                 38m   172.18.0.4    node3                       <none>           <none>
+kube-system          kube-apiserver-gpu-cluster-control-plane            1/1     Running   0                 19h   172.18.0.6    gpu-cluster-control-plane   <none>           <none>
+kube-system          kube-controller-manager-gpu-cluster-control-plane   1/1     Running   0                 19h   172.18.0.6    gpu-cluster-control-plane   <none>           <none>
+kube-system          kube-proxy-659xq                                    1/1     Running   0                 19h   172.18.0.5    node4                       <none>           <none>
+kube-system          kube-proxy-djhns                                    1/1     Running   0                 19h   172.18.0.2    node1                       <none>           <none>
+kube-system          kube-proxy-kzz5p                                    0/1     Error     133 (5m13s ago)   19h   172.18.0.3    node2                       <none>           <none>
+kube-system          kube-proxy-tl8n6                                    1/1     Running   0                 19h   172.18.0.6    gpu-cluster-control-plane   <none>           <none>
+kube-system          kube-proxy-vv7nv                                    1/1     Running   0                 19h   172.18.0.4    node3                       <none>           <none>
+kube-system          kube-scheduler-gpu-cluster-control-plane            1/1     Running   0                 19h   172.18.0.6    gpu-cluster-control-plane   <none>           <none>
+local-path-storage   local-path-provisioner-7dc846544d-d4rwq             1/1     Running   0                 19h   10.244.0.5    gpu-cluster-control-plane   <none>           <none>
+```
+
+Logs on check pods:
+
+```sh
+~ kubectl logs gpu-scheduler-check-2
+...
+Node Name: node3
+CUDA_VISIBLE_DEVICES: 0,1,2
+---
+
+~ kubectl logs gpu-scheduler-check-3
+...
+Node Name: node4
+CUDA_VISIBLE_DEVICES: 3
+---
+
+~ kubectl logs gpu-scheduler-check-4
+...
+Node Name: node4
+CUDA_VISIBLE_DEVICES: 3
+```
